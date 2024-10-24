@@ -20,10 +20,33 @@ func main() {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+	// Reading request length
+	length := make([]byte, 4)
+	leng_conn_read, err := conn.Read(length)
+	if err != nil {
+		return
+	}
+	// Reading the rest of the request
+	request := make([]byte, binary.BigEndian.Uint32(length))
+	_, err = conn.Read(request)
+	if err != nil {
+		return
+	}
 
-	resonse := make([]byte, 8)
-	binary.BigEndian.PutUint32(resonse[4:], 7)
-	conn.Write(resonse)
+	correlation_id := binary.BigEndian.Uint32(request[4:8])
+
+	// fmt.Println(length)
+	fmt.Println(leng_conn_read)
+	// fmt.Println(request)
+	// fmt.Println(correlation_id)
+
+	response := make([]byte, 8)
+	binary.BigEndian.PutUint32(response[4:], correlation_id)
+	conn.Write(response)
+
+	// conn.Peek()
+
+	// fmt.Println(response)
 
 	defer conn.Close()
 }
