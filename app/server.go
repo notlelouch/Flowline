@@ -48,7 +48,7 @@ func main() {
 		fmt.Println("Error peeking data:", err)
 		return
 	}
-	fmt.Printf("Peeked data: %v", peekedData)
+	// fmt.Printf("Peeked data: %v", peekedData)
 
 	request_length := binary.BigEndian.Uint32(peekedData)
 
@@ -64,13 +64,23 @@ func main() {
 		return
 	}
 
+	request_api_version := int16(binary.BigEndian.Uint16(request[6:8]))
 	correlation_id := binary.BigEndian.Uint32(request[8:12])
 
-	fmt.Printf("request: %v", request)
-	fmt.Printf("correlation_id: %v", correlation_id)
+	fmt.Println(request)
+	fmt.Println(correlation_id)
+	fmt.Println(request_api_version)
 
-	response := make([]byte, 8)
-	binary.BigEndian.PutUint32(response[4:], correlation_id)
+	response := make([]byte, 10)
+	binary.BigEndian.PutUint32(response[4:8], correlation_id)
+
+	if 0 > request_api_version || request_api_version > 4 {
+		binary.BigEndian.PutUint16(response[8:10], 35)
+	} else {
+		binary.BigEndian.PutUint16(response[8:10], 0)
+	}
+
+	fmt.Println(request)
 
 	conn.Write(response)
 
