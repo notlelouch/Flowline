@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -20,33 +21,58 @@ func main() {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
-	// Reading request length
-	length := make([]byte, 4)
-	leng_conn_read, err := conn.Read(length)
+	// DIREST CONNECTION READ/WRITE METHOD
+	// length := make([]byte, 4)
+	// _, err = conn.Read(length)
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// request := make([]byte, binary.BigEndian.Uint32(length))
+	// _, err = conn.Read(request)
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// correlation_id := binary.BigEndian.Uint32(request[4:8])
+	//
+	// response := make([]byte, 8)
+	// binary.BigEndian.PutUint32(response[4:], correlation_id)
+	//
+	// conn.Write(response)
+
+	// USING BUFFERED I/O
+	reader := bufio.NewReader(conn)
+	peekedData, err := reader.Peek(4)
 	if err != nil {
+		fmt.Println("Error peeking data:", err)
 		return
 	}
-	// Reading the rest of the request
-	request := make([]byte, binary.BigEndian.Uint32(length))
-	_, err = conn.Read(request)
+	fmt.Printf("Peeked data: %v", peekedData)
+
+	request_length := binary.BigEndian.Uint32(peekedData)
+
+	request := make([]byte, request_length)
+	_, err = reader.Read(request)
+	if err != nil {
+		fmt.Println("Error reading request:", err)
+		return
+	}
+
+	_, err = reader.Discard(4)
 	if err != nil {
 		return
 	}
 
-	correlation_id := binary.BigEndian.Uint32(request[4:8])
+	correlation_id := binary.BigEndian.Uint32(request[8:12])
 
-	// fmt.Println(length)
-	fmt.Println(leng_conn_read)
-	// fmt.Println(request)
-	// fmt.Println(correlation_id)
+	fmt.Printf("request: %v", request)
+	fmt.Printf("correlation_id: %v", correlation_id)
 
 	response := make([]byte, 8)
 	binary.BigEndian.PutUint32(response[4:], correlation_id)
+
 	conn.Write(response)
-
-	// conn.Peek()
-
-	// fmt.Println(response)
 
 	defer conn.Close()
 }
