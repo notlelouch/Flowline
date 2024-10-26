@@ -9,8 +9,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Logs from your program will appear here!")
-
 	l, err := net.Listen("tcp", "0.0.0.0:9092")
 	if err != nil {
 		fmt.Println("Failed to bind to port 9092")
@@ -21,6 +19,8 @@ func main() {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+	defer conn.Close()
+
 	// DIREST CONNECTION READ/WRITE METHOD
 	// length := make([]byte, 4)
 	// _, err = conn.Read(length)
@@ -124,6 +124,5 @@ func main() {
 		fmt.Println("Error writing response:", err)
 		return
 	}
-
-	defer conn.Close()
+	conn.Close()
 }
